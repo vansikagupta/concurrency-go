@@ -33,27 +33,26 @@ func worker(id int, jobs <-chan Job, results chan<- Result, wg *sync.WaitGroup) 
 func main() {
 
 	//create pool
-	jobs := make(chan Job)
+	jobs := make(chan Job, 20)
 	results := make(chan Result, 20)
 
 	var wg sync.WaitGroup
 
 	//create fixed number of workers
-	for i := 0; i < 7; i++ {
+	for i := 0; i < 5; i++ {
 		wg.Add(1)
 		go worker(i+1, jobs, results, &wg)
 	}
 
 	timeNow := time.Now()
-	go func(jobs chan Job) {
-		//add tasks to job pool
-		for i := 0; i < 20; i++ {
-			random := rand.Intn(99)
-			jobs <- Job{i + 1, random}
-		}
-		//closing the jobs channel is important otherwise workers will keep waiting on it forever
-		close(jobs)
-	}(jobs)
+	//add tasks to job pool
+	for i := 0; i < 20; i++ {
+		random := rand.Intn(99)
+		jobs <- Job{i + 1, random}
+	}
+
+	//closing the jobs channel is important otherwise workers will keep waiting on it forever
+	close(jobs)
 
 	//waiting on all worker pools to finish
 	wg.Wait()
